@@ -7,7 +7,8 @@
 //
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
-
+#include "GameSprite.h"
+#include "GameManager.h"
 using namespace cocos2d;
 using namespace CocosDenshion;
 
@@ -340,8 +341,8 @@ void HelloWorld::update(float dt)
     }
 }
 
-void HelloWorld::ccTouchesBegan(cocos2d::CCSet* touches, cocos2d::CCEvent* event){
-
+void HelloWorld::ccTouchesBegan(cocos2d::CCSet* touches, cocos2d::CCEvent* event)
+{
     if (_mouseJoint != NULL) return;
     CCTouch *touch = (CCTouch*)touches->anyObject();
     CCPoint tap = touch->getLocation();
@@ -362,13 +363,13 @@ void HelloWorld::ccTouchesBegan(cocos2d::CCSet* touches, cocos2d::CCEvent* event
     }
 }
 
-void HelloWorld::ccTouchesMoved(cocos2d::CCSet* touches, cocos2d::CCEvent* event) {
+void HelloWorld::ccTouchesMoved(cocos2d::CCSet* touches, cocos2d::CCEvent* event)
+{
     if (_mouseJoint == NULL) return;
     CCTouch  *myTouch = (CCTouch *)touches->anyObject();
     CCPoint location = myTouch->getLocation();
     b2Vec2 locationWorld = b2Vec2(location.x / PTM_RATIO, location.y / PTM_RATIO);
     _mouseJoint->SetTarget(locationWorld);
-
 }
 
 void HelloWorld::ccTouchesEnded(CCSet* touches, CCEvent* event) {
@@ -378,8 +379,13 @@ void HelloWorld::ccTouchesEnded(CCSet* touches, CCEvent* event) {
     }
 }
 
-void HelloWorld::playerScore(int player) {
-    SimpleAudioEngine::sharedEngine()->playEffect("score.wav");
+void HelloWorld::playerScore(int player)
+{
+    if (GameManager::sharedGameManager()->getBgm())
+    {
+        SimpleAudioEngine::sharedEngine()->playEffect("score.wav");
+
+    }
     char scoreBuff[10];
     
     if (player == 1) {

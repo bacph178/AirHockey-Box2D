@@ -11,8 +11,14 @@
 
 #include <iostream>
 #include "cocos2d.h"
+using namespace cocos2d;
 class Menu : public cocos2d::CCLayer
 {
+private:
+    CCMenuItemImage *bmgMenuItem;
+    CCMenuItemImage *rankMenuItem;
+    CCMenuItemImage *startMenuItem;
+    CCMenu* pMenu;
 public:
     // Method 'init' in cocos2d-x returns bool, instead of 'id' in cocos2d-iphone (an object pointer)
     virtual bool init();
