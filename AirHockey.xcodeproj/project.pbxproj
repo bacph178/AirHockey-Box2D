@@ -10,7 +10,6 @@
 		0F34A90F17742AFF00F9FEE4 /* hit.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0F34A8F817742AFF00F9FEE4 /* hit.wav */; };
 		0F34A91017742AFF00F9FEE4 /* hitPuck.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0F34A8F917742AFF00F9FEE4 /* hitPuck.wav */; };
 		0F34A91117742AFF00F9FEE4 /* score.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0F34A8FA17742AFF00F9FEE4 /* score.wav */; };
-		0F3E3CA7177D7D750044E737 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 0F3E3CA6177D7D750044E737 /* Default-568h@2x.png */; };
 		0F6202D71779569D000E49BF /* hd in Resources */ = {isa = PBXBuildFile; fileRef = 0F6202D51779569D000E49BF /* hd */; };
 		0F6202D81779569D000E49BF /* sd in Resources */ = {isa = PBXBuildFile; fileRef = 0F6202D61779569D000E49BF /* sd */; };
 		0F729FF1176EE8D6000FE6E7 /* counter.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0F729FEF176EE8D6000FE6E7 /* counter.plist */; };
@@ -312,7 +311,6 @@
 		0F34A8F817742AFF00F9FEE4 /* hit.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit.wav; sourceTree = "<group>"; };
 		0F34A8F917742AFF00F9FEE4 /* hitPuck.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hitPuck.wav; sourceTree = "<group>"; };
 		0F34A8FA17742AFF00F9FEE4 /* score.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = score.wav; sourceTree = "<group>"; };
-		0F3E3CA6177D7D750044E737 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Default-568h@2x.png"; path = "../Default-568h@2x.png"; sourceTree = "<group>"; };
 		0F6202D51779569D000E49BF /* hd */ = {isa = PBXFileReference; lastKnownFileType = folder; name = hd; path = Resources/hd; sourceTree = "<group>"; };
 		0F6202D61779569D000E49BF /* sd */ = {isa = PBXFileReference; lastKnownFileType = folder; name = sd; path = Resources/sd; sourceTree = "<group>"; };
 		0F729FEF176EE8D6000FE6E7 /* counter.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = counter.plist; sourceTree = "<group>"; };
@@ -1039,7 +1037,6 @@
 		0FA83E081768807300A04769 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				0F3E3CA6177D7D750044E737 /* Default-568h@2x.png */,
 				0F6202D51779569D000E49BF /* hd */,
 				0F6202D61779569D000E49BF /* sd */,
 				84A2589117785613001AD208 /* green_edit.png */,
@@ -2302,7 +2299,6 @@
 				84A2589217785613001AD208 /* green_edit.png in Resources */,
 				0F6202D71779569D000E49BF /* hd in Resources */,
 				0F6202D81779569D000E49BF /* sd in Resources */,
-				0F3E3CA7177D7D750044E737 /* Default-568h@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

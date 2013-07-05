@@ -293,7 +293,7 @@ void GamePlay::update(float dt)
                 }
             }
         }
-        #pragma mark Goal !!!
+        
         if (_ball->getPositionY() >= s.height + _ball->getContentSize().height/2) {
             this->playerScore(1);
             this->gameReset();
@@ -305,7 +305,6 @@ void GamePlay::update(float dt)
         }
     }
     
-        #pragma mark When Finish Game
     if ((minutes == 0 && seconds == 0) || _player1Score == 7 || _player2Score == 7) {
         playing = false ;
         this->unscheduleAllSelectors() ;
@@ -335,22 +334,13 @@ void GamePlay::update(float dt)
         this->checkHightScore();
     }
     
-    
     std::vector<MyContact>::iterator pos;
     for(pos = _contactListener->_contacts.begin();
         pos != _contactListener->_contacts.end(); ++pos) {
         MyContact contact = *pos;
-        
-//        if ((_ballBody->GetLinearVelocity().y > 2 || _ballBody->GetLinearVelocity().x > 2) &&
-//            (contact.fixtureA == _ballFixture || contact.fixtureB == _ballFixture)) {
-//            SimpleAudioEngine::sharedEngine()->playEffect("hitPuck.wav");
-//        }
-        
+                
         if ((contact.fixtureA == _ballFixture && contact.fixtureB == _player2Fixture) ||
             (contact.fixtureA == _player2Fixture && contact.fixtureB == _ballFixture)) {
-//            b2Vec2 p1 = _ballBody->GetPosition();
-//            b2Vec2 p2 = 1.1 * p1;
-//            drawReflectedRay(p1, p2);
             
             lastHit = 0;
             this->defenseCenter();
@@ -359,10 +349,6 @@ void GamePlay::update(float dt)
     if (lastHit >= 450) {
         this->defenseCenter();
     }
-    
-    b2Vec2 p1 = _ballBody->GetPosition();
-    b2Vec2 p2 = p1 + 0.2 * _ballBody->GetLinearVelocity();
-    this->drawReflectedRay(p1, p2);
 }
 
 #pragma mark AI Player
@@ -544,7 +530,7 @@ void GamePlay::playerScore(int player) {
         
         _ballBody->SetLinearVelocity(b2Vec2(0, 0));
         _ballBody->SetTransform(
-            this->ptm2(w/2, h/2 - _ball->getContentSize().height), 0);
+            this->ptm2(w/2, h/2 + _ball->getContentSize().height), 0);
     }
     if (player == 2) {
         _player2Score++;
