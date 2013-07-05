@@ -72,11 +72,16 @@ public:
     
     void addBgWin();
     void addBgLose();
+    void addBgPause();
+
     void moveBgWin(int i);
     void moveBgLose(int i);
+    void moveBgPause(int i);
     void rePlay();
     void drawReflectedRay(b2Vec2 p1, b2Vec2 p2);
-    
+    void menuReplay(CCObject *psceene);
+    void menuMenu(CCObject *psceene);
+    void menuPause(CCObject *psceene);
     void checkHightScore();
     void onHttpRequestCompleted(CCNode *sender, void *data);
     
@@ -143,13 +148,21 @@ private:
     //when finish
     CCSprite *bgWin;
     CCSprite *bgLose;
-    CCSprite *replayWin;
-    CCSprite *replayLose;
-    CCSprite *menuWin;
-    CCSprite *menuLose;
+    CCMenuItemImage *replayWin;
+    CCMenuItemImage *replayLose;
+    CCMenuItemImage *menuWin;
+    CCMenuItemImage *menuLose;
+    CCMenu *menuFinish;
     CCLabelTTF *lb_point;
     bool win ;
     bool lose ;
+    //when pause
+    int pauseGame;
+    CCMenu *menuMenuPause;
+    CCSprite *bgPause;
+    CCMenuItemImage *replayPause;
+    CCMenuItemImage *menuMnPause;
+    CCMenuItemImage *menuItemImagePause;
 };
 
 #endif // __GAME_PLAY_H__
