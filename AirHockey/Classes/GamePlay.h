@@ -85,7 +85,7 @@ private:
     float h = s.height;
     float w = s.width;
     
-    
+                CCLabelTTF *outp    = CCLabelTTF::create("O", "Arial", 32);
     b2Body *_groundBody;
     b2Body *_midleLineBody;
     b2Body *_player1Body;

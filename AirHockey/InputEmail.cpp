@@ -103,7 +103,7 @@ void InputEmail::menuSendEmail(CCObject *pSender)
         char strP[20] = {0};
         sprintf(strP, "%i", p);
         string email = GameManager::sharedGameManager()->getEmail();
-        string url = "http://localhost:3000/users?name="+name+"&point="+strP+"&email="+email;
+        string url = "http://192.168.1.44:3000/users?name="+name+"&point="+strP+"&email="+email;
         request->setUrl(url.c_str());
         request->setRequestType(CCHttpRequest::kHttpPost);
         CCHttpClient::getInstance()->send(request);

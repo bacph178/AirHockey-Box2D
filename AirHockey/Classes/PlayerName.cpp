@@ -8,6 +8,7 @@
 
 #include "PlayerName.h"
 #include "GameManager.h"
+#include <string.h>
 #include "GamePlay.h"
 
 using namespace cocos2d;
@@ -41,10 +42,13 @@ bool PlayerName::init()
                                  visibleOrigin.y + visibleSize.height * 3 / 4));
     m_pEditName->setFontSize(40);
     m_pEditName->setFontColor(ccRED);
-    m_pEditName->setPlaceHolder("Player");
+    string p = CCUserDefault::sharedUserDefault()->getStringForKey("playerName");
+    if (p == "") m_pEditName->setPlaceHolder("Player");
+    else m_pEditName->setPlaceHolder(p.c_str());
     m_pEditName->setPlaceholderFontColor(ccWHITE);
     m_pEditName->setMaxLength(15);
     m_pEditName->setReturnType(cocos2d::extension::kKeyboardReturnTypeDone);
+    
     m_pEditName->setDelegate(this);
     this->addChild(m_pEditName);
     CCMenuItemFont *mediumMenuItem =
@@ -88,6 +92,10 @@ void PlayerName::editBoxReturn(cocos2d::extension::CCEditBox* editBox)
 void PlayerName::menuHard(CCObject *pSender)
 {
 //    if (strcmp(m_pEditName->getText(), "") != 0) {
+    CCUserDefault::sharedUserDefault()->setStringForKey("playerName",
+                                                        m_pEditName->getText());
+    CCLOG("%s", m_pEditName->getText());
+    CCUserDefault::sharedUserDefault()->flush();
         GameManager::sharedGameManager()->setLevel(3);
         CCScene *gamePlayScene = GamePlay::scene();
         CCDirector::sharedDirector()->replaceScene(gamePlayScene);
@@ -96,6 +104,10 @@ void PlayerName::menuHard(CCObject *pSender)
 void PlayerName::menuMedium(CCObject *pSender)
 {
 //    if (strcmp(m_pEditName->getText(), "") != 0) {
+    CCUserDefault::sharedUserDefault()->setStringForKey("playerName",
+                                                        m_pEditName->getText());
+    CCLOG("%s", m_pEditName->getText());
+    CCUserDefault::sharedUserDefault()->flush();
         GameManager::sharedGameManager()->setLevel(2);
         CCScene *gamePlayScene = GamePlay::scene();
         CCDirector::sharedDirector()->replaceScene(gamePlayScene);
@@ -105,6 +117,10 @@ void PlayerName::menuMedium(CCObject *pSender)
 void PlayerName::menuEasy(CCObject *pSender)
 {
 //    if (strcmp(m_pEditName->getText(), "") != 0) {
+    CCUserDefault::sharedUserDefault()->setStringForKey("playerName",
+                                                        m_pEditName->getText());
+    CCLOG("%s", m_pEditName->getText());
+    CCUserDefault::sharedUserDefault()->flush();
         GameManager::sharedGameManager()->setLevel(1);
         CCScene *gamePlayScene = GamePlay::scene();
         CCDirector::sharedDirector()->replaceScene(gamePlayScene);

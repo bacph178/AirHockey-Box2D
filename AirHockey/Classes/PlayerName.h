@@ -17,7 +17,7 @@ class PlayerName : public CCLayer, public extension::CCEditBoxDelegate{
 private:
     extension::CCEditBox* m_pEditName;
     CCLabelTTF* m_pTTFShowEditReturn;
-    CCMenu* pMenu;
+    CCMenu *pMenu;
 public:
     // Method 'init' in cocos2d-x returns bool, instead of 'id' in cocos2d-iphone (an object pointer)
     virtual bool init();

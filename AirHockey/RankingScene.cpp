@@ -38,7 +38,7 @@ bool RankingScene::init()
     this->addChild(ranking);
 
     CCHttpRequest* request = new CCHttpRequest();
-    request->setUrl("http://localhost:3000/users.json");
+    request->setUrl("http://192.168.1.44:3000/users.json");
     request->setRequestType(CCHttpRequest::kHttpGet);
     request->setResponseCallback(this, callfuncND_selector(RankingScene::onHttpRequestCompleted));
     CCHttpClient::getInstance()->send(request);

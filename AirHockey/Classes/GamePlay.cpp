@@ -163,7 +163,7 @@ GamePlay::GamePlay()
                                          s.height * 0.5 + 130));
     _player2ScoreLabel2->setRotation(90);
     this->addChild(_player2ScoreLabel2);
-    
+    this->addChild(outp);
 
     schedule(schedule_selector(GamePlay::update));
     schedule(schedule_selector(GamePlay::handleProcess), 0.025);
@@ -326,7 +326,7 @@ void GamePlay::update(float dt)
         string name = GameManager::sharedGameManager()->getName();
         char strP[20] = {0};
         sprintf(strP, "%i", p);
-        string url = "http://localhost:3000/users?name="+name+"&point="+strP+"&email=ngocduk54a2@gmail.com"+"&reward=0";
+        string url = "http://192.168.1.44:3000/users?name="+name+"&point="+strP+"&email=ngocduk54a2@gmail.com"+"&reward=0";
         request->setUrl(url.c_str());
         request->setRequestType(CCHttpRequest::kHttpPost);
         CCHttpClient::getInstance()->send(request);
@@ -351,6 +351,7 @@ void GamePlay::update(float dt)
 //            b2Vec2 p1 = _ballBody->GetPosition();
 //            b2Vec2 p2 = 1.1 * p1;
 //            drawReflectedRay(p1, p2);
+            
             lastHit = 0;
             this->defenseCenter();
         }
@@ -358,6 +359,10 @@ void GamePlay::update(float dt)
     if (lastHit >= 450) {
         this->defenseCenter();
     }
+    
+    b2Vec2 p1 = _ballBody->GetPosition();
+    b2Vec2 p2 = p1 + 0.2 * _ballBody->GetLinearVelocity();
+    this->drawReflectedRay(p1, p2);
 }
 
 #pragma mark AI Player
@@ -367,8 +372,8 @@ void GamePlay::handleProcess() {
     float x = _ball->getPositionX();
     float y = _ball->getPositionY();
     
-    float vx = _ballBody->GetLinearVelocity().x;
-    float vy = _ballBody->GetLinearVelocity().y;
+//    float vx = _ballBody->GetLinearVelocity().x;
+//    float vy = _ballBody->GetLinearVelocity().y;
     float br = _ball->getContentSize().width / 2;
     
     if (lastHit >= 450) {
@@ -390,75 +395,6 @@ void GamePlay::wander() {
         _player2Body->ApplyLinearImpulse(this->ptm2(vx, vy),
                                          _player2Body->GetWorldCenter());
     }
-}
-
-void GamePlay::checkHightScore() {
-    CCHttpRequest* request = new CCHttpRequest();
-    request->setUrl("http://localhost:3000/users.json");
-    request->setRequestType(CCHttpRequest::kHttpGet);
-    request->setResponseCallback(this, callfuncND_selector(GamePlay::onHttpRequestCompleted));
-    CCHttpClient::getInstance()->send(request);
-    request->release();
-}
-void GamePlay::onHttpRequestCompleted(CCNode *sender, void *data)
-{
-    CCSize size = CCDirector::sharedDirector()->getWinSize();
-    CCHttpResponse *response = (CCHttpResponse*)data;
-    
-    if (!response)
-    {
-        return;
-    }
-    
-    int statusCode = response->getResponseCode();
-    char statusString[64] = {};
-    sprintf(statusString, "HTTP Status Code: %d, tag = %s", statusCode, response->getHttpRequest()->getTag());
-    
-    if (!response->isSucceed())
-    {
-        
-        CCLabelTTF *notConnectLabel =
-        CCLabelTTF::create("PLEASE CHECK YOUR INTERNET CONNECTION", "Time new roman",
-                           30);
-        notConnectLabel->setPosition(ccp(size.width / 2, size.height / 2));
-        this->addChild(notConnectLabel);
-        return;
-    }
-    
-    // dump data
-    std::vector<char> *buffer = response->getResponseData();
-    char * data2 = (char*)(malloc(buffer->size() *  sizeof(char)));
-    int d = -1;
-    printf("Http Test, dump data: ");
-    for (unsigned int i = 0; i < buffer->size(); i++)
-    {
-        d++ ;
-        data2[d] = (*buffer)[i];
-    }
-    data2[d + 1] = '\0';
-    //-----------------------
-    rapidjson::Document document;
-    if(data2 != NULL && !document.Parse<0>(data2).HasParseError())
-    {
-        string name = GameManager::sharedGameManager()->getName();
-        int point = (_player1Score + 1) * (180 - (minutes * 60 + seconds)) *
-           (GameManager::sharedGameManager()->getLevel() * 2000);
-        for (rapidjson::SizeType  i = 0; i < document.Size(); i++)
-        {
-            if (document[i]["name"].GetString() == name &&
-                point == document[i]["point"].GetInt() &&
-                document[i]["reward"].GetInt() != 0) {
-                CCDirector::sharedDirector()->replaceScene(InputEmail::scene());
-                break;
-            }
-        }
-    }
-    else
-    {
-        CCLog(document.GetParseError());
-    }
-    d = -1;
-    delete []data2;
 }
 
 void GamePlay::defenseLeft() {
@@ -654,62 +590,19 @@ void GamePlay::gameReset()
 //new function for FooTest class
 void GamePlay::drawReflectedRay(b2Vec2 p1, b2Vec2 p2)
 {
-    CCLabelTTF *inp     = CCLabelTTF::create("I", "Arial", 32);
-    CCLabelTTF *outp    = CCLabelTTF::create("O", "Arial", 32);
-    inp->setPosition(ccp(p1.x * PTM_RATIO, p1.y * PTM_RATIO));
-    outp->setPosition(ccp(p2.x * PTM_RATIO, p2.y * PTM_RATIO));
-    this->addChild(inp);
-    this->addChild(outp);
-
-    CCLOG("p1 & p2: (%f %f) (%f %f)",
-       p1.x * PTM_RATIO,
-       p1.y * PTM_RATIO,
-       p2.x * PTM_RATIO,
-       p2.y * PTM_RATIO);
-    //set up input
     b2RayCastInput input;
     input.p1 = p1;
     input.p2 = p2;
-    input.maxFraction = 5;
-
-    float closestFraction = 5;
-    b2Vec2 intersectionNormal(0,0);
+    input.maxFraction = 10;
     
     for (b2Fixture* f = _groundBody->GetFixtureList(); f;  f = f->GetNext()) {
         b2RayCastOutput output;
-        if ( !f->RayCast( &output, input, 0) )
-            continue;
-        if ( output.fraction < closestFraction ) {
-            closestFraction = output.fraction;
-            CCLOG("Closest Fraction: %f", closestFraction);
-            intersectionNormal = output.normal;
-            CCLOG("Nomal Vector: %f %f", output.normal.x,
-                  output.normal.y);
-            b2Vec2 i = p1 + closestFraction * (p2 - p1);
-            CCLOG("collision: (%f %f)",
-                  i.x * PTM_RATIO,
-                  i.y * PTM_RATIO
-                  );
+        if ( !f->RayCast( &output, input, 0) ) {
+            b2Vec2 i = p1 + output.fraction * (p2 - p1);
+            outp->setPosition(ccp(i.x * PTM_RATIO, i.y * PTM_RATIO));
+            return;
         }
     }
-    
-    b2Vec2 intersectionPoint = p1 + closestFraction * (p2 - p1);
-    
-    if ( closestFraction == 10 )
-        return;
-    if ( closestFraction == 0 )
-        return;
-    
-    //still some ray left to reflect
-    b2Vec2 remainingRay = (p1 + 5 * (p2 - p1) - intersectionPoint);
-    b2Vec2 projectedOntoNormal = b2Dot(remainingRay, intersectionNormal) * intersectionNormal;
-    b2Vec2 nextp2 = p2 - 2 * projectedOntoNormal;
-//    CCLOG("Next: (%f %f)",
-//          intersectionPoint.x * PTM_RATIO,
-//          intersectionPoint.y * PTM_RATIO
-//          );
-    //recurse
-    this->drawReflectedRay(intersectionPoint, nextp2);
 }
 
 void GamePlay::updateTime(float dt) {
@@ -880,6 +773,76 @@ void GamePlay::rePlay() {
     schedule(schedule_selector(GamePlay::updateTime), 1);
     schedule(schedule_selector(GamePlay::handleProcess), 0.025);
 }
+
+void GamePlay::checkHightScore() {
+    CCHttpRequest* request = new CCHttpRequest();
+    request->setUrl("http://192.168.1.44:3000/users.json");
+    request->setRequestType(CCHttpRequest::kHttpGet);
+    request->setResponseCallback(this, callfuncND_selector(GamePlay::onHttpRequestCompleted));
+    CCHttpClient::getInstance()->send(request);
+    request->release();
+}
+void GamePlay::onHttpRequestCompleted(CCNode *sender, void *data)
+{
+    CCSize size = CCDirector::sharedDirector()->getWinSize();
+    CCHttpResponse *response = (CCHttpResponse*)data;
+    
+    if (!response)
+    {
+        return;
+    }
+    
+    int statusCode = response->getResponseCode();
+    char statusString[64] = {};
+    sprintf(statusString, "HTTP Status Code: %d, tag = %s", statusCode, response->getHttpRequest()->getTag());
+    
+    if (!response->isSucceed())
+    {
+        
+        CCLabelTTF *notConnectLabel =
+        CCLabelTTF::create("PLEASE CHECK YOUR INTERNET CONNECTION", "Time new roman",
+                           30);
+        notConnectLabel->setPosition(ccp(size.width / 2, size.height / 2));
+        this->addChild(notConnectLabel);
+        return;
+    }
+    
+    // dump data
+    std::vector<char> *buffer = response->getResponseData();
+    char * data2 = (char*)(malloc(buffer->size() *  sizeof(char)));
+    int d = -1;
+    printf("Http Test, dump data: ");
+    for (unsigned int i = 0; i < buffer->size(); i++)
+    {
+        d++ ;
+        data2[d] = (*buffer)[i];
+    }
+    data2[d + 1] = '\0';
+    //-----------------------
+    rapidjson::Document document;
+    if(data2 != NULL && !document.Parse<0>(data2).HasParseError())
+    {
+        string name = GameManager::sharedGameManager()->getName();
+        int point = (_player1Score + 1) * (180 - (minutes * 60 + seconds)) *
+        (GameManager::sharedGameManager()->getLevel() * 2000);
+        for (rapidjson::SizeType  i = 0; i < document.Size(); i++)
+        {
+            if (document[i]["name"].GetString() == name &&
+                point == document[i]["point"].GetInt() &&
+                document[i]["reward"].GetInt() != 0) {
+                CCDirector::sharedDirector()->replaceScene(InputEmail::scene());
+                break;
+            }
+        }
+    }
+    else
+    {
+        CCLog(document.GetParseError());
+    }
+    d = -1;
+    delete []data2;
+}
+
 
 #pragma mark GamePlay Scene
 
