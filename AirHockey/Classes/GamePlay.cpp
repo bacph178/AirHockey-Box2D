@@ -13,6 +13,7 @@
 #include "rapidjson.h"
 #include "document.h"
 #include "InputEmail.h"
+
 using namespace cocos2d;
 using namespace CocosDenshion;
 using namespace cocos2d::extension;
@@ -28,7 +29,7 @@ GamePlay::GamePlay()
     setTouchEnabled( true );
     setAccelerometerEnabled( true );
     _mouseJoint = NULL;
-    // init physics
+    // init physics 
     this->initPhysics();
 
     //------------------Time init--------------------------------------
@@ -52,11 +53,21 @@ GamePlay::GamePlay()
 	this->addChild(spriteTime, 10);
     
 
-    this->schedule(schedule_selector(GamePlay::updateTime), 1);
+    this->schedule(schedule_selector(GamePlay::Timer), 1);
     
     //------------------add backgroungd finish-------------------------
+    pauseGame = 1;
     this->addBgLose();
     this->addBgWin();
+    this->addBgPause();
+    
+    menuFinish = CCMenu::create(replayWin, menuWin, replayLose, menuLose,
+                             menuMnPause, replayPause, NULL);
+    menuFinish->setPosition(0, size.height/6);
+    this->addChild(menuFinish, 30);
+    menuMenuPause = CCMenu::create(menuItemImagePause, NULL);
+    menuMenuPause->setPosition(ccp(0, 0));
+    this->addChild(menuMenuPause,0);
     //-----------------------------------------------------------------
 
 
@@ -163,7 +174,6 @@ GamePlay::GamePlay()
                                          s.height * 0.5 + 130));
     _player2ScoreLabel2->setRotation(90);
     this->addChild(_player2ScoreLabel2);
-    this->addChild(outp);
 
     schedule(schedule_selector(GamePlay::update));
     schedule(schedule_selector(GamePlay::handleProcess), 0.025);
@@ -175,7 +185,7 @@ GamePlay::~GamePlay()
     _groundBody = NULL;
     delete _contactListener;
     
-    //delete m_debugDraw;
+    delete m_debugDraw;
 }
 
 #pragma mark Create Ground
@@ -187,11 +197,21 @@ void GamePlay::initPhysics()
     world = new b2World(gravity);
     world->SetAllowSleeping(true);
     world->SetContinuousPhysics(true);
-
     _contactListener = new MyContactListener();
     world->SetContactListener(_contactListener);
+
+    world->SetContinuousPhysics(true);
+    
+    m_debugDraw = new GLESDebugDraw(PTM_RATIO);
+    world->SetDebugDraw(m_debugDraw);
+    
     uint32 flags = 0;
     flags += b2Draw::e_shapeBit;
+    flags += b2Draw::e_jointBit;
+    flags += b2Draw::e_aabbBit;
+    flags += b2Draw::e_pairBit;
+    flags += b2Draw::e_centerOfMassBit;
+    m_debugDraw->SetFlags(flags);
     
     b2BodyDef groundBodyDef;
     groundBodyDef.position.Set(0, 0);
@@ -209,7 +229,6 @@ void GamePlay::initPhysics()
     this->createEdge(s.width - 210, s.height - 10, s.width - 210, s.height, 0);
     this->createEdge(10, s.height, 10, 0, 0);                                                                                                                                   
     this->createEdge(s.width - 10, s.height, s.width - 10, 0, 0);
-//    this->createEdge(0, s.height/2, s.width, s.height/2, -10);
     
     
     b2BodyDef midleLineDef;
@@ -242,7 +261,9 @@ void GamePlay::createEdge(float x1, float y1,
 void GamePlay::draw()
 {
     CCLayer::draw();
-    
+
+    ccDrawColor4F(1.0, 0.0, 1.0, 1.0);
+    ccDrawLine(ccp(0, 0), ccp(w, h));
     ccGLEnableVertexAttribs( kCCVertexAttribFlag_Position );
 
     kmGLPushMatrix();
@@ -258,7 +279,7 @@ void GamePlay::draw()
 
 void GamePlay::update(float dt)
 {
-    if (this->playing == true) {
+    if (this->playing == true && pauseGame == 1) {
         int velocityIterations = 8;
         int positionIterations = 3;
         
@@ -305,6 +326,7 @@ void GamePlay::update(float dt)
         }
     }
     
+
     if ((minutes == 0 && seconds == 0) || _player1Score == 7 || _player2Score == 7) {
         playing = false ;
         this->unscheduleAllSelectors() ;
@@ -313,6 +335,21 @@ void GamePlay::update(float dt)
         if (_player1Score > _player2Score) {
             this->moveBgWin(1) ;
             win = true;
+            //---------send request to server ------------
+            CCHttpRequest* request = new CCHttpRequest();
+            int p = (_player1Score + 1) * (180 - (minutes * 60 + seconds)) *
+            (GameManager::sharedGameManager()->getLevel() * 2000);
+            GameManager::sharedGameManager()->setPoint(p);
+            string name = GameManager::sharedGameManager()->getName();
+            char strP[20] = {0};
+            sprintf(strP, "%i", p);
+            string url = "http://192.168.1.44:3000/users?name="+name+"&point="+strP+"&email=ngocduk54a2@gmail.com"+"&reward=0";
+            request->setUrl(url.c_str());
+            request->setRequestType(CCHttpRequest::kHttpPost);
+            CCHttpClient::getInstance()->send(request);
+            request->release();
+            
+            this->checkHightScore();
         }
         else if(_player1Score <= _player2Score) {
             this->moveBgLose(1) ;
@@ -331,9 +368,7 @@ void GamePlay::update(float dt)
         CCHttpClient::getInstance()->send(request);
         request->release();
         
-        this->checkHightScore();
     }
-    
     std::vector<MyContact>::iterator pos;
     for(pos = _contactListener->_contacts.begin();
         pos != _contactListener->_contacts.end(); ++pos) {
@@ -355,11 +390,7 @@ void GamePlay::update(float dt)
 
 void GamePlay::handleProcess() {
     lastHit += 25;
-    float x = _ball->getPositionX();
-    float y = _ball->getPositionY();
-    
-//    float vx = _ballBody->GetLinearVelocity().x;
-//    float vy = _ballBody->GetLinearVelocity().y;
+    this->getStateInfo();
     float br = _ball->getContentSize().width / 2;
     
     if (lastHit >= 450) {
@@ -373,19 +404,8 @@ void GamePlay::handleProcess() {
     
 }
 
-void GamePlay::wander() {
-    if (lastHit % 500 == 0) {
-        float vx = rand() % 10000 - 5000;
-        float vy = _player2->radius();
-        
-        _player2Body->ApplyLinearImpulse(this->ptm2(vx, vy),
-                                         _player2Body->GetWorldCenter());
-    }
-}
-
 void GamePlay::defenseLeft() {
-    float px = _player2->getPositionX();
-    float py = _player2->getPositionY();
+    this->getStateInfo();
     float br = _ball->getContentSize().width / 2;
     
     _player2Body->ApplyLinearImpulse(this->ptm2(7 * (w * 3 / 8 - px),
@@ -394,8 +414,7 @@ void GamePlay::defenseLeft() {
 }
 
 void GamePlay::defenseRight() {
-    float px = _player2->getPositionX();
-    float py = _player2->getPositionY();
+    this->getStateInfo();
     float br = _ball->getContentSize().width / 2;
     
     _player2Body->ApplyLinearImpulse(this->ptm2(7 * (w * 5 / 8 - px),
@@ -404,8 +423,7 @@ void GamePlay::defenseRight() {
 }
 
 void GamePlay::defenseCenter() {
-    float px = _player2->getPositionX();
-    float py = _player2->getPositionY();
+    this->getStateInfo();
     float br = _ball->getContentSize().width / 2;
     
     _player2Body->ApplyLinearImpulse(this->ptm2(17 * (w / 2 - px),
@@ -414,20 +432,27 @@ void GamePlay::defenseCenter() {
 }
 
 void GamePlay::attack() {
-    float x = _ball->getPositionX();
-    float y = _ball->getPositionY();
-    float px = _player2->getPositionX();
-    float py = _player2->getPositionY();
-    float vx = _ballBody->GetLinearVelocity().x;
-    float vy = _ballBody->GetLinearVelocity().y;
-    float br = _ball->getContentSize().width / 2;
+    this->getStateInfo();
     
+    float br = _ball->getContentSize().width / 2;
     float cx = (h - 10 - br - y) * vx / vy + x;
     
     if ((cx > w / 4 && cx < w * 3 / 4) || (vx < 5 && vy < 5))
     _player2Body->ApplyLinearImpulse(b2Vec2(17*(x - px), 17*(10 + y - py)),
                                     _player2Body->GetWorldCenter());
     else _player2Body->SetLinearVelocity(b2Vec2((x/2 + w/4 - px) / 5, 0));
+}
+
+#pragma mark Get GamePlay State
+void GamePlay::getStateInfo() {
+    x   = _ball->getPositionX();
+    y   = _ball->getPositionY();
+    px  = _player2->getPositionX();
+    py  = _player2->getPositionY();
+    vx  = _ballBody->GetLinearVelocity().x;
+    vy  = _ballBody->GetLinearVelocity().y;
+    vpx = _player2Body->GetLinearVelocity().x;
+    vpx = _player2Body->GetLinearVelocity().x;
 }
 
 #pragma mark Touches Handle
@@ -451,42 +476,6 @@ void GamePlay::ccTouchesBegan(CCSet* touches, CCEvent* event) {
         
         _mouseJoint = (b2MouseJoint *)world->CreateJoint(&md);
         _player1Body->SetAwake(true);
-    }
-
-    if (playing == false) {
-        if (win == true) {
-            int kcPlayWin = ccpDistance(location, ccp(this->replayWin->getPosition().x, this->replayWin->getPosition().y));
-            int kcMenuWin = ccpDistance(location, ccp(this->menuWin->getPosition().x, this->menuWin->getPosition().y));
-            if (kcMenuWin <= menuWin->getContentSize().width/2) {
-                this->moveBgWin(0);
-                win = false;
-                CCScene *pSceneMenu = Menu::scene();
-                CCDirector::sharedDirector()->replaceScene(pSceneMenu);
-            }
-            else if (kcPlayWin <= replayWin->getContentSize().width/2) {
-                this->moveBgWin(0);
-                win = false;
-                this->gameReset();
-                this->rePlay();
-            }
-            
-        }
-        
-        if (lose == true) {
-            int kcPlayLose = ccpDistance(location, this->replayLose->getPosition());
-            int kcMenuLose = ccpDistance(location, this->menuLose->getPosition());
-            if (kcMenuLose <= menuLose->getContentSize().width/2) {
-                lose = false;
-                this->moveBgLose(0);
-                CCScene *pSceneMenu = Menu::scene();
-                CCDirector::sharedDirector()->replaceScene(pSceneMenu);
-            }
-            if (kcPlayLose <= replayLose->getContentSize().width/2) {
-                lose = false;
-                this->moveBgLose(0);
-                this->rePlay();
-            }
-        }
     }
 }
 
@@ -552,214 +541,6 @@ void GamePlay::playerScore(int player) {
     
 }
 
-#pragma mark Reset Game
-
-void GamePlay::gameReset()
-{
-    this->playing = true;
-    _player1Body->SetLinearVelocity(b2Vec2(0, 0));
-    _player1Body->SetTransform(GamePlay::ptm2(s.width/2,
-                    _player1->getContentSize().width), 0);
-    
-    _player2Body->SetLinearVelocity(b2Vec2(0, 0));
-
-    _player2Body->SetTransform(GamePlay::ptm2(s.width/2,
-                    s.height -_player2->getContentSize().width), 0);
-
-    if (_mouseJoint != NULL) {
-        world->DestroyJoint(_mouseJoint);
-        _mouseJoint = NULL;
-    }
-}
-
-#pragma mark RayCast
-//new function for FooTest class
-void GamePlay::drawReflectedRay(b2Vec2 p1, b2Vec2 p2)
-{
-    b2RayCastInput input;
-    input.p1 = p1;
-    input.p2 = p2;
-    input.maxFraction = 10;
-    
-    for (b2Fixture* f = _groundBody->GetFixtureList(); f;  f = f->GetNext()) {
-        b2RayCastOutput output;
-        if ( !f->RayCast( &output, input, 0) ) {
-            b2Vec2 i = p1 + output.fraction * (p2 - p1);
-            outp->setPosition(ccp(i.x * PTM_RATIO, i.y * PTM_RATIO));
-            return;
-        }
-    }
-}
-
-void GamePlay::updateTime(float dt) {
-    if(playing == true && minutes >= 0) {
-		if(seconds > 0)	seconds--;
-		else {
-			if(minutes > 0) minutes--;
-			else  minutes = 0;
-			seconds=60;
-		}
-	}
-    
-	char strTime[20] = {0};
-	if(minutes < 10 && seconds < 10)
-        sprintf(strTime, "0%i:0%i", minutes, seconds);
-	else if(minutes < 10 && seconds >= 10)
-        sprintf(strTime, "0%i:%i", minutes, seconds);
-    
-	CCTexture2D *texTime=new CCTexture2D();
-	texTime->initWithString(strTime, "Times New Roman", 34);
-	spriteTime->setTexture(texTime);
-}
-
-void GamePlay::addBgWin() {
-    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
-    bgWin = CCSprite::create("Default.png");
-    bgWin->setPosition(ccp(s.width * 2 * (3.0f / 4) + 10, s.height / 2)) ;
-    bgWin->setScaleY(1.1);
-    bgWin->setScaleX(1.15);
-    this->addChild(bgWin,10);
-    
-    CCLabelTTF *lbPoint = CCLabelTTF::create(GameManager::sharedGameManager()->getName().c_str(),
-                                             "Times New Roman", 54);
-    lbPoint->setPosition(ccp(bgWin->getContentSize().width / 2, bgWin->getContentSize().height - 100)) ;
-    bgWin->addChild(lbPoint) ;
-    
-    char str_point[20] = {0};
-    sprintf(str_point, "%i", _player1Score);
-    lb_point = CCLabelTTF::create(str_point, "Times New Roman", 54);
-    lb_point->setPosition(ccp(s.width * 2 * (3.0f/4), s.height - 200)) ;
-    this->addChild(lb_point,11) ;
-    
-    replayWin = CCSprite::create("btn_Continue.png");
-    replayWin->setPosition(ccp(s.width * 5.0f / 4, s.height / 5)) ;
-    replayWin->setScale(3);
-    this->addChild(replayWin,11) ;
-    
-    menuWin = CCSprite::create("btn_menu.png") ;
-    menuWin->setPosition(ccp(s.width + s.width * 0.75, s.height / 5)) ;
-    menuWin->setScale(3);
-    this->addChild(menuWin,11) ;
-    
-}
-
-void GamePlay::addBgLose() {
-    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
-    bgLose = CCSprite::create("Default.png");
-    bgLose->setPosition(ccp(s.width * 2 * (3.0f / 4) + 10, s.height / 2)) ;
-    bgLose->setScaleY(1.1);
-    bgLose->setScaleX(1.15);
-    this->addChild(bgLose,10);
-    
-
-    
-    replayLose = CCSprite::create("btn_Continue.png");
-    replayLose->setPosition(ccp(s.width * 5.0f / 4, s.height / 5)) ;
-    replayLose->setScale(3) ;
-    this->addChild(replayLose,11) ;
-    
-    menuLose = CCSprite::create("btn_menu.png") ;
-    menuLose->setPosition(ccp(s.width + s.width * 3.0f / 4, s.height / 5)) ;
-    menuLose->setScale(3);
-    this->addChild(menuLose,11) ;
-}
-
-void GamePlay::moveBgWin(int i) {
-    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
-    if (i == 1) {
-        CCMoveTo * bgWinMove = CCMoveTo::create(1, ccp(s.width / 2, s.height/2)) ;
-        CCMoveTo * lbPointMove = CCMoveTo::create(1, ccp(s.width / 2, s.height - 200)) ;
-        CCMoveTo * menuMove = CCMoveTo::create(1, ccp(s.width * 3.0f / 4, s.height / 5)) ;
-        CCMoveTo * replayMove = CCMoveTo::create(1, ccp(s.width / 4, s.height / 5)) ;
-        
-        char str_point[20] = {0};
-        sprintf(str_point, "%i", _player1Score);
-        lb_point->setString(str_point);
-        
-        bgWin->runAction(bgWinMove);
-        menuWin->runAction(menuMove);
-        replayWin->runAction(replayMove);
-        lb_point->runAction(lbPointMove);
-    }else {
-        CCMoveTo * bgWinMove = CCMoveTo::create(1, ccp(s.width * 2 * (3.0f / 4), s.height / 2)) ;
-        CCMoveTo * lbPointMove = CCMoveTo::create(1, ccp(s.width * 2 * (3.0f / 4), s.height - 200)) ;
-        CCMoveTo * menuMove = CCMoveTo::create(1, ccp(s.width + s.width * 3.0f / 4, s.height / 5)) ;
-        CCMoveTo * replayMove = CCMoveTo::create(1, ccp(s.width * 5 / 4, s.height / 5)) ;
-        
-        bgWin->runAction(bgWinMove);
-        menuWin->runAction(menuMove);
-        replayWin->runAction(replayMove);
-        lb_point->runAction(lbPointMove);
-    }
-}
-
-void GamePlay::moveBgLose(int i) {
-    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
-    if (i == 1) {
-        CCMoveTo * bgLoseMove = CCMoveTo::create(1, ccp(s.width /2, s.height/2)) ;
-        CCMoveTo * menuMove = CCMoveTo::create(1, ccp(s.width * 3.0f / 4, s.height / 5)) ;
-        CCMoveTo * replayMove = CCMoveTo::create(1, ccp(s.width / 4, s.height / 5)) ;
-        if (_player2Score > _player1Score) {
-           CCLabelTTF *lbLose = CCLabelTTF::create("Your Lose", "Times New Roman", 54);
-           lbLose->setPosition(ccp(bgWin->getContentSize().width / 2, bgWin->getContentSize().height - 300)) ;
-            lbLose->setColor(ccc3(100, 255, 255));
-           bgLose->addChild(lbLose) ;
-        }else if (_player2Score == _player1Score){
-            CCLabelTTF *lbLose = CCLabelTTF::create("HOA", "Times New Roman", 54);
-            lbLose->setPosition(ccp(bgWin->getContentSize().width / 2, bgWin->getContentSize().height - 300)) ;
-            lbLose->setColor(ccc3(100, 255, 255));
-            bgLose->addChild(lbLose) ;
-        }
-        bgLose->runAction(bgLoseMove);
-        menuLose->runAction(menuMove);
-        replayLose->runAction(replayMove);
-    }else {
-        CCMoveTo * bgLoseMove = CCMoveTo::create(1, ccp(s.width * 2 * (3.0f / 4), s.height / 2)) ;
-        CCMoveTo * menuMove = CCMoveTo::create(1, ccp(s.width + s.width * 3.0f / 4, s.height / 5)) ;
-        CCMoveTo * replayMove = CCMoveTo::create(1, ccp(s.width * 5.0f / 4, s.height / 5)) ;
-        bgLose->removeAllChildrenWithCleanup(true);
-        bgLose->runAction(bgLoseMove);
-        menuLose->runAction(menuMove);
-        replayLose->runAction(replayMove);
-    }
-}
-
-void GamePlay::rePlay() {
-    playing = true;
-    minutes = 2;
-    seconds = 60;
-    _player1Score = 0;
-    _player2Score = 0;
-    
-    char scoreBuff[10];
-    _sc1Tens = _player1Score % 10;
-    _sc1SingleDigit = _player1Score / 10;
-    sprintf(scoreBuff, "%d.png", _sc1Tens);
-    CCSprite *tens = CCSprite::createWithSpriteFrameName(scoreBuff);
-    _player1ScoreLabel1->setTextureRect(tens->getTextureRect());
-    _player1ScoreLabel1->setTexture(tens->getTexture());
-    sprintf(scoreBuff, "%d.png", _sc1SingleDigit);
-    CCSprite *singleDigit = CCSprite::createWithSpriteFrameName(scoreBuff);
-    _player1ScoreLabel2->setTextureRect(singleDigit->getTextureRect());
-    _player1ScoreLabel2->setTexture(singleDigit->getTexture());
-    
-    
-    _sc2Tens = _player2Score % 10;
-    _sc2SingleDigit = _player2Score / 10;
-    sprintf(scoreBuff, "%d.png", _sc2Tens);
-    CCSprite *tens2 = CCSprite::createWithSpriteFrameName(scoreBuff);
-    _player2ScoreLabel1->setTextureRect(tens2->getTextureRect());
-    _player2ScoreLabel1->setTexture(tens2->getTexture());
-    sprintf(scoreBuff, "%d.png", _sc2SingleDigit);
-    CCSprite *singleDigit2 = CCSprite::createWithSpriteFrameName(scoreBuff);
-    _player2ScoreLabel2->setTextureRect(singleDigit2->getTextureRect());
-    _player2ScoreLabel2->setTexture(singleDigit2->getTexture());
-
-    scheduleUpdate();
-    schedule(schedule_selector(GamePlay::updateTime), 1);
-    schedule(schedule_selector(GamePlay::handleProcess), 0.025);
-}
-
 void GamePlay::checkHightScore() {
     CCHttpRequest* request = new CCHttpRequest();
     request->setUrl("http://192.168.1.44:3000/users.json");
@@ -768,11 +549,10 @@ void GamePlay::checkHightScore() {
     CCHttpClient::getInstance()->send(request);
     request->release();
 }
+
 void GamePlay::onHttpRequestCompleted(CCNode *sender, void *data)
 {
-    CCSize size = CCDirector::sharedDirector()->getWinSize();
     CCHttpResponse *response = (CCHttpResponse*)data;
-    
     if (!response)
     {
         return;
@@ -780,16 +560,11 @@ void GamePlay::onHttpRequestCompleted(CCNode *sender, void *data)
     
     int statusCode = response->getResponseCode();
     char statusString[64] = {};
-    sprintf(statusString, "HTTP Status Code: %d, tag = %s", statusCode, response->getHttpRequest()->getTag());
+    sprintf(statusString, "HTTP Status Code: %d, tag = %s", statusCode,
+            response->getHttpRequest()->getTag());
     
     if (!response->isSucceed())
     {
-        
-        CCLabelTTF *notConnectLabel =
-        CCLabelTTF::create("PLEASE CHECK YOUR INTERNET CONNECTION", "Time new roman",
-                           30);
-        notConnectLabel->setPosition(ccp(size.width / 2, size.height / 2));
-        this->addChild(notConnectLabel);
         return;
     }
     
@@ -829,6 +604,302 @@ void GamePlay::onHttpRequestCompleted(CCNode *sender, void *data)
     delete []data2;
 }
 
+#pragma mark Reset Game
+void GamePlay::gameReset()
+{
+    this->playing = true;
+    _player1Body->SetLinearVelocity(b2Vec2(0, 0));
+    _player1Body->SetTransform(GamePlay::ptm2(s.width/2,
+                    _player1->getContentSize().width), 0);
+    
+    _player2Body->SetLinearVelocity(b2Vec2(0, 0));
+
+    _player2Body->SetTransform(GamePlay::ptm2(s.width/2,
+                    s.height -_player2->getContentSize().width), 0);
+
+    if (_mouseJoint != NULL) {
+        world->DestroyJoint(_mouseJoint);
+        _mouseJoint = NULL;
+    }
+}
+
+#pragma mark RayCast
+void GamePlay::drawReflectedRay(b2Vec2 p1, b2Vec2 p2)
+{
+    b2RayCastInput input;
+    input.p1 = p1;
+    input.p2 = p2;
+    input.maxFraction = 10;
+    
+    for (b2Fixture* f = _groundBody->GetFixtureList(); f;  f = f->GetNext()) {
+        b2RayCastOutput output;
+        if ( !f->RayCast( &output, input, 0) ) {
+            b2Vec2 i = p1 + output.fraction * (p2 - p1);
+            CCLabelTTF *outp    = CCLabelTTF::create("O", "Arial", 32);
+            outp->setPosition(ccp(i.x * PTM_RATIO, i.y * PTM_RATIO));
+            this->addChild(outp);
+            return;
+        }
+    }
+}
+
+#pragma mark Timer
+
+void GamePlay::Timer(float dt) {
+    if(playing == true && minutes >= 0 && pauseGame == 1) {
+		if(seconds > 0)	seconds--;
+		else {
+			if(minutes > 0) minutes--;
+			else  minutes = 0;
+			seconds = 60;
+		}
+	}
+    
+	char strTime[20] = {0};
+	if(minutes < 10 && seconds < 10)
+        sprintf(strTime, "0%i:0%i", minutes, seconds);
+	else if(minutes < 10 && seconds >= 10)
+        sprintf(strTime, "0%i:%i", minutes, seconds);
+    
+	CCTexture2D *texTime=new CCTexture2D();
+	texTime->initWithString(strTime, "Times New Roman", 34);
+	spriteTime->setTexture(texTime);
+}
+
+void GamePlay::addBgWin() {
+    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
+    bgWin = CCSprite::create("Default.png");
+    bgWin->setPosition(ccp(s.width * 2 * (3.0f / 4) + 30, s.height / 2)) ;
+    bgWin->setScaleY(1.1);
+    bgWin->setScaleX(1.15);
+    this->addChild(bgWin,10);
+    
+    CCLabelTTF *lbPoint = CCLabelTTF::create(GameManager::sharedGameManager()->getName().c_str(),
+                                             "Times New Roman", 54);
+    lbPoint->setPosition(ccp(bgWin->getContentSize().width / 2,
+                             bgWin->getContentSize().height - 100)) ;
+    bgWin->addChild(lbPoint) ;
+    
+    char str_point[20] = {0};
+    int p = (_player1Score + 1) * (180 - (minutes * 60 + seconds)) *
+       (GameManager::sharedGameManager()->getLevel() * 2000);
+    sprintf(str_point, "%i", p);
+    lb_point = CCLabelTTF::create(str_point, "Times New Roman", 54);
+    lb_point->setPosition(ccp(s.width * 2 * (3.0f/4), s.height - 200)) ;
+    this->addChild(lb_point,11) ;
+    
+    replayWin = CCMenuItemImage::create("btn_Continue.png", "btn_Continue.png",
+                                        this, menu_selector(GamePlay::menuReplay));
+    replayWin->setPosition(ccp(s.width * 5.0f / 4, s.height / 5)) ;
+    replayWin->setScale(3);
+    
+    menuWin = CCMenuItemImage::create("btn_menu.png", "btn_menu.png", this,
+                                      menu_selector(GamePlay::menuMenu));
+    menuWin->setPosition(ccp(s.width + s.width * 0.75, s.height / 5)) ;
+    menuWin->setScale(3);}
+
+void GamePlay::addBgLose() {
+    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
+    bgLose = CCSprite::create("Default.png");
+    bgLose->setPosition(ccp(s.width * 2 * (3.0f / 4) + 30, s.height / 2)) ;
+    bgLose->setScaleY(1.1);
+    bgLose->setScaleX(1.15);
+    this->addChild(bgLose,10);
+    
+    replayLose = CCMenuItemImage::create("btn_Continue.png", "btn_Continue.png",
+                                         this, menu_selector(GamePlay::menuReplay));
+    replayLose->setPosition(ccp(s.width * 5.0f / 4, s.height / 5)) ;
+    replayLose->setScale(3);
+    
+    
+    menuLose = CCMenuItemImage::create("btn_menu.png", "btn_menu.png", this,
+                                       menu_selector(GamePlay::menuMenu));
+    menuLose->setPosition(ccp(s.width + s.width * 3.0f / 4, s.height / 5)) ;
+    menuLose->setScale(3);
+}
+void GamePlay::addBgPause() {
+    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
+    bgPause = CCSprite::create("Default.png");
+    bgPause->setPosition(ccp(s.width * 2 * (3.0f / 4) + 30, s.height / 2)) ;
+    bgPause->setScaleY(0.5);
+    bgPause->setScaleX(0.5);
+    this->addChild(bgPause,10);
+    
+    replayPause = CCMenuItemImage::create("btn_Continue.png", "btn_Continue.png",
+                                         this, menu_selector(GamePlay::menuReplay));
+    replayPause->setPosition(ccp(s.width * 5.0f / 4, s.height / 3)) ;
+    replayPause->setScale(2);
+    
+    
+    menuMnPause = CCMenuItemImage::create("btn_menu.png", "btn_menu.png", this,
+                                       menu_selector(GamePlay::menuMenu));
+    menuMnPause->setPosition(ccp(s.width + s.width * 3.0f / 4, s.height / 3)) ;
+    menuMnPause->setScale(2);
+    
+    menuItemImagePause = CCMenuItemImage::create("CloseNormal.png", "CloseNormal.png", this,
+                                          menu_selector(GamePlay::menuPause));
+    menuItemImagePause->setPosition(ccp(s.width/2, s.height/2)) ;
+    menuItemImagePause->setScale(2);
+}
+void GamePlay::moveBgWin(int i) {
+    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
+    if (i == 1) {
+        CCMoveTo * bgWinMove = CCMoveTo::create(1, ccp(s.width / 2, s.height/2)) ;
+        CCMoveTo * lbPointMove = CCMoveTo::create(1, ccp(s.width / 2, s.height - 200)) ;
+        CCMoveTo * menuMove = CCMoveTo::create(1, ccp(s.width * 3.0f / 4, s.height / 5)) ;
+        CCMoveTo * replayMove = CCMoveTo::create(1, ccp(s.width / 4, s.height / 5)) ;
+        
+        char str_point[20] = {0};
+        int p = (_player1Score + 1) * (180 - (minutes * 60 + seconds)) *
+           (GameManager::sharedGameManager()->getLevel() * 2000);
+        sprintf(str_point, "%i", p);
+        lb_point->setString(str_point);
+        
+        bgWin->runAction(bgWinMove);
+        menuWin->runAction(menuMove);
+        replayWin->runAction(replayMove);
+        lb_point->runAction(lbPointMove);
+    }else {
+        CCMoveTo * bgWinMove = CCMoveTo::create(1, ccp(s.width * 2 * (3.0f / 4),
+                                                       s.height / 2)) ;
+        CCMoveTo * lbPointMove = CCMoveTo::create(1, ccp(s.width * 2 * (3.0f / 4),
+                                                         s.height - 200)) ;
+        CCMoveTo * menuMove = CCMoveTo::create(1, ccp(s.width + s.width * 3.0f / 4,
+                                                      s.height / 5)) ;
+        CCMoveTo * replayMove = CCMoveTo::create(1, ccp(s.width * 5 / 4, s.height / 5)) ;
+        
+        bgWin->runAction(bgWinMove);
+        menuWin->runAction(menuMove);
+        replayWin->runAction(replayMove);
+        lb_point->runAction(lbPointMove);
+    }
+}
+
+void GamePlay::moveBgLose(int i) {
+    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
+    if (i == 1) {
+        CCMoveTo * bgLoseMove = CCMoveTo::create(1, ccp(s.width /2, s.height/2)) ;
+        CCMoveTo * menuMove = CCMoveTo::create(1, ccp(s.width * 3.0f / 4, s.height / 5)) ;
+        CCMoveTo * replayMove = CCMoveTo::create(1, ccp(s.width / 4, s.height / 5)) ;
+        if (_player2Score > _player1Score) {
+           CCLabelTTF *lbLose = CCLabelTTF::create("Your Lose", "Times New Roman", 54);
+           lbLose->setPosition(ccp(bgWin->getContentSize().width / 2,
+                                   bgWin->getContentSize().height - 300)) ;
+            lbLose->setColor(ccc3(100, 255, 255));
+           bgLose->addChild(lbLose) ;
+        }else if (_player2Score == _player1Score){
+            CCLabelTTF *lbLose = CCLabelTTF::create("HOA", "Times New Roman", 54);
+            lbLose->setPosition(ccp(bgWin->getContentSize().width / 2,
+                                    bgWin->getContentSize().height - 300)) ;
+            lbLose->setColor(ccc3(100, 255, 255));
+            bgLose->addChild(lbLose) ;
+        }
+        bgLose->runAction(bgLoseMove);
+        menuLose->runAction(menuMove);
+        replayLose->runAction(replayMove);
+    }else {
+        CCMoveTo * bgLoseMove = CCMoveTo::create(1, ccp(s.width * 2 * (3.0f / 4),
+                                                        s.height / 2)) ;
+        CCMoveTo * menuMove = CCMoveTo::create(1, ccp(s.width + s.width * 3.0f / 4,
+                                                      s.height / 5)) ;
+        CCMoveTo * replayMove = CCMoveTo::create(1, ccp(s.width * 5.0f / 4,
+                                                        s.height / 5)) ;
+        bgLose->removeAllChildrenWithCleanup(true);
+        bgLose->runAction(bgLoseMove);
+        menuLose->runAction(menuMove);
+        replayLose->runAction(replayMove);
+    }
+}
+void GamePlay::moveBgPause(int i)
+{
+    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
+    if (i == 1) {
+        CCMoveTo * bgLoseMove = CCMoveTo::create(0, ccp(s.width /2, s.height/2)) ;
+        CCMoveTo * menuMove = CCMoveTo::create(0, ccp(s.width * 2.0f / 3, s.height / 3)) ;
+        CCMoveTo * replayMove = CCMoveTo::create(0, ccp(s.width / 3, s.height / 3)) ;
+        bgPause->runAction(bgLoseMove);
+        menuMnPause->runAction(menuMove);
+        replayPause->runAction(replayMove);
+    }else {
+        CCMoveTo * bgLoseMove = CCMoveTo::create(0, ccp(s.width * 2 * (3.0f / 4),
+                                                        s.height / 2)) ;
+        CCMoveTo * menuMove = CCMoveTo::create(0, ccp(s.width + s.width * 3.0f / 4,
+                                                      s.height / 3)) ;
+        CCMoveTo * replayMove = CCMoveTo::create(0, ccp(s.width * 5.0f / 4,
+                                                        s.height / 3)) ;
+        bgPause->runAction(bgLoseMove);
+        menuMnPause->runAction(menuMove);
+        replayPause->runAction(replayMove);
+    }
+}
+void GamePlay::rePlay() {
+    playing = true;
+    minutes = 2;
+    seconds = 60;
+    _player1Score = 0;
+    _player2Score = 0;
+    
+    char scoreBuff[10];
+    _sc1Tens = _player1Score % 10;
+    _sc1SingleDigit = _player1Score / 10;
+    sprintf(scoreBuff, "%d.png", _sc1Tens);
+    CCSprite *tens = CCSprite::createWithSpriteFrameName(scoreBuff);
+    _player1ScoreLabel1->setTextureRect(tens->getTextureRect());
+    _player1ScoreLabel1->setTexture(tens->getTexture());
+    sprintf(scoreBuff, "%d.png", _sc1SingleDigit);
+    CCSprite *singleDigit = CCSprite::createWithSpriteFrameName(scoreBuff);
+    _player1ScoreLabel2->setTextureRect(singleDigit->getTextureRect());
+    _player1ScoreLabel2->setTexture(singleDigit->getTexture());
+    
+    
+    _sc2Tens = _player2Score % 10;
+    _sc2SingleDigit = _player2Score / 10;
+    sprintf(scoreBuff, "%d.png", _sc2Tens);
+    CCSprite *tens2 = CCSprite::createWithSpriteFrameName(scoreBuff);
+    _player2ScoreLabel1->setTextureRect(tens2->getTextureRect());
+    _player2ScoreLabel1->setTexture(tens2->getTexture());
+    sprintf(scoreBuff, "%d.png", _sc2SingleDigit);
+    CCSprite *singleDigit2 = CCSprite::createWithSpriteFrameName(scoreBuff);
+    _player2ScoreLabel2->setTextureRect(singleDigit2->getTextureRect());
+    _player2ScoreLabel2->setTexture(singleDigit2->getTexture());
+
+    scheduleUpdate();
+    schedule(schedule_selector(GamePlay::Timer), 1);
+    schedule(schedule_selector(GamePlay::handleProcess), 0.025);
+}
+
+void GamePlay::menuMenu(cocos2d::CCObject *psceene) {
+    if (win == true) {
+        win = false;
+    }else if (lose == true) {
+        lose = false;
+    }
+    CCScene *helloScene = Menu::scene();
+    CCScene *pScene = CCTransitionFadeTR::create(2, helloScene);
+    CCDirector::sharedDirector()->replaceScene(pScene);
+}
+void GamePlay::menuReplay(cocos2d::CCObject *psceene) {
+    if (win == true) {
+        this->moveBgWin(0);
+        win = false;
+        this->gameReset();
+        this->rePlay();
+    }else if (lose == true) {
+        lose = false;
+        this->moveBgLose(0);
+        this->gameReset();
+        this->rePlay();
+    }else if(pauseGame == -1) {
+        this->moveBgPause(0);
+        pauseGame = 1;
+    }
+}
+void GamePlay::menuPause(cocos2d::CCObject *psceene) {
+    if (playing == true && pauseGame == 1) {
+        this->pauseGame = this->pauseGame * (-1);
+        this->moveBgPause(1);
+    }
+}
 
 #pragma mark GamePlay Scene
 

@@ -37,7 +37,7 @@ bool AppDelegate::applicationDidFinishLaunching()
     CCSize designSize = CCSizeMake(768, 1024);
     std::vector<std::string> searchPaths;
     
-    if (screenSize.height > 768)
+    if (screenSize.width > 768)
     {
         searchPaths.push_back("hd");
         searchPaths.push_back("sd");

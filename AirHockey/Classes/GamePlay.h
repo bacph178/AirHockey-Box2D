@@ -13,6 +13,7 @@
 #include "Box2D.h"
 #include "MyContactListener.h"
 #include "GameSprite.h"
+#include "GLES-Render.h"
 
 #define PTM_RATIO 32
 
@@ -59,7 +60,8 @@ public:
     void defenseRight();
     void attack();
     
-    void _moveTo(float ox, float oy, float px, float py);
+    void getStateInfo();
+    
     
     b2Vec2 ptm(CCPoint point) {
         return b2Vec2(point.x / PTM_RATIO, point.y / PTM_RATIO);
@@ -68,24 +70,30 @@ public:
         return b2Vec2(x / PTM_RATIO, y / PTM_RATIO);
     }
     
-    void updateTime(float dt);
+    void Timer(float dt);
     
     void addBgWin();
     void addBgLose();
+    void addBgPause();
+
     void moveBgWin(int i);
     void moveBgLose(int i);
+    void moveBgPause(int i);
     void rePlay();
     void drawReflectedRay(b2Vec2 p1, b2Vec2 p2);
-    
+    void menuReplay(CCObject *psceene);
+    void menuMenu(CCObject *psceene);
+    void menuPause(CCObject *psceene);
     void checkHightScore();
     void onHttpRequestCompleted(CCNode *sender, void *data);
     
 private:
+    GLESDebugDraw *m_debugDraw;
+    
     CCSize s = CCDirector::sharedDirector()->getWinSize();
     float h = s.height;
     float w = s.width;
     
-                CCLabelTTF *outp    = CCLabelTTF::create("O", "Arial", 32);
     b2Body *_groundBody;
     b2Body *_midleLineBody;
     b2Body *_player1Body;
@@ -108,19 +116,20 @@ private:
     CCSprite *_player2ScoreLabel1;
     CCSprite *_player2ScoreLabel2;
     
-    
-    
     int _player1Score = 0;
     int _sc1Tens;
     int _sc1SingleDigit;
     int _player2Score = 0;
     int _sc2Tens;
     int _sc2SingleDigit;
-    
     int lastHit = 0;
+    
     float m_radius1;
     float m_radius2;
     float m_radius3;
+    
+    float x, y, px, py;
+    float vx, vy, vpx, vpy;
     
     bool p1touched = false;
     bool p2touched = false;
@@ -143,13 +152,21 @@ private:
     //when finish
     CCSprite *bgWin;
     CCSprite *bgLose;
-    CCSprite *replayWin;
-    CCSprite *replayLose;
-    CCSprite *menuWin;
-    CCSprite *menuLose;
+    CCMenuItemImage *replayWin;
+    CCMenuItemImage *replayLose;
+    CCMenuItemImage *menuWin;
+    CCMenuItemImage *menuLose;
+    CCMenu *menuFinish;
     CCLabelTTF *lb_point;
     bool win ;
     bool lose ;
+    //when pause
+    int pauseGame;
+    CCMenu *menuMenuPause;
+    CCSprite *bgPause;
+    CCMenuItemImage *replayPause;
+    CCMenuItemImage *menuMnPause;
+    CCMenuItemImage *menuItemImagePause;
 };
 
 #endif // __GAME_PLAY_H__
