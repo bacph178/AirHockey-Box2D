@@ -12,7 +12,7 @@ private:
     string name;
     int level;//esey =
     string email;
-    int point;
+    int point = 0;
     //Constructor
     GameManager();
 

@@ -293,6 +293,11 @@
 		0FA841A11768808600A04769 /* GamePlay.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0FA841A01768808600A04769 /* GamePlay.cpp */; };
 		0FB5B2E61769792D00E2A745 /* MyContactListener.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0FB5B2E41769792D00E2A745 /* MyContactListener.cpp */; };
 		8406FAC9178169C8004B1DA2 /* RankingScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8406FAC7178169C7004B1DA2 /* RankingScene.cpp */; };
+		84075FE8178D361600C319E2 /* winDefault.png in Resources */ = {isa = PBXBuildFile; fileRef = 84075FE7178D361600C319E2 /* winDefault.png */; };
+		84075FEE178D5E1B00C319E2 /* GLES-Render.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84075FEA178D5E1900C319E2 /* GLES-Render.cpp */; };
+		840B4512178EABED00C9A52E /* localRank.plist in Resources */ = {isa = PBXBuildFile; fileRef = 840B4511178EABED00C9A52E /* localRank.plist */; };
+		840B4515178EAD7400C9A52E /* IOFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 840B4513178EAD7400C9A52E /* IOFile.cpp */; };
+		84249C94178BF19600EAD1AC /* LocalRankScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84249C92178BF19600EAD1AC /* LocalRankScene.cpp */; };
 		848194E7177304F00084A86B /* bgm.png in Resources */ = {isa = PBXBuildFile; fileRef = 848194E3177304F00084A86B /* bgm.png */; };
 		848194E8177304F00084A86B /* menu.png in Resources */ = {isa = PBXBuildFile; fileRef = 848194E4177304F00084A86B /* menu.png */; };
 		848194E9177304F00084A86B /* rank.png in Resources */ = {isa = PBXBuildFile; fileRef = 848194E5177304F00084A86B /* rank.png */; };
@@ -927,6 +932,14 @@
 		8406FAC617815112004B1DA2 /* writer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = writer.h; sourceTree = "<group>"; };
 		8406FAC7178169C7004B1DA2 /* RankingScene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RankingScene.cpp; sourceTree = "<group>"; };
 		8406FAC8178169C7004B1DA2 /* RankingScene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RankingScene.h; sourceTree = "<group>"; };
+		84075FE7178D361600C319E2 /* winDefault.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = winDefault.png; path = Resources/winDefault.png; sourceTree = "<group>"; };
+		84075FEA178D5E1900C319E2 /* GLES-Render.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "GLES-Render.cpp"; path = "Classes/GLES-Render.cpp"; sourceTree = "<group>"; };
+		84075FEB178D5E1A00C319E2 /* GLES-Render.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "GLES-Render.h"; path = "Classes/GLES-Render.h"; sourceTree = "<group>"; };
+		840B4511178EABED00C9A52E /* localRank.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = localRank.plist; sourceTree = "<group>"; };
+		840B4513178EAD7400C9A52E /* IOFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IOFile.cpp; path = Classes/IOFile.cpp; sourceTree = "<group>"; };
+		840B4514178EAD7400C9A52E /* IOFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IOFile.h; path = Classes/IOFile.h; sourceTree = "<group>"; };
+		84249C92178BF19600EAD1AC /* LocalRankScene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LocalRankScene.cpp; sourceTree = "<group>"; };
+		84249C93178BF19600EAD1AC /* LocalRankScene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LocalRankScene.h; sourceTree = "<group>"; };
 		848194E3177304F00084A86B /* bgm.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = bgm.png; path = Resources/bgm.png; sourceTree = "<group>"; };
 		848194E4177304F00084A86B /* menu.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = menu.png; path = Resources/menu.png; sourceTree = "<group>"; };
 		848194E5177304F00084A86B /* rank.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = rank.png; path = Resources/rank.png; sourceTree = "<group>"; };
@@ -1037,6 +1050,7 @@
 		0FA83E081768807300A04769 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				84075FE7178D361600C319E2 /* winDefault.png */,
 				0F6202D51779569D000E49BF /* hd */,
 				0F6202D61779569D000E49BF /* sd */,
 				84A2589117785613001AD208 /* green_edit.png */,
@@ -1061,6 +1075,7 @@
 				0FA83E1B1768807300A04769 /* Icon@2x.png */,
 				0FA83E1D1768807300A04769 /* iTunesArtwork */,
 				0FA83E1F1768807300A04769 /* Info.plist */,
+				840B4511178EABED00C9A52E /* localRank.plist */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -2172,6 +2187,10 @@
 		0FA8419B1768808600A04769 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				840B4513178EAD7400C9A52E /* IOFile.cpp */,
+				840B4514178EAD7400C9A52E /* IOFile.h */,
+				84075FEA178D5E1900C319E2 /* GLES-Render.cpp */,
+				84075FEB178D5E1A00C319E2 /* GLES-Render.h */,
 				84A25890177837D3001AD208 /* AppMacros.h */,
 				84A2588A17783721001AD208 /* GameManager.cpp */,
 				84A2588B17783721001AD208 /* GameManager.h */,
@@ -2191,6 +2210,8 @@
 				8406FAC8178169C7004B1DA2 /* RankingScene.h */,
 				DC71402217841CAC001B275B /* InputEmail.h */,
 				DC71402317841CBF001B275B /* InputEmail.cpp */,
+				84249C92178BF19600EAD1AC /* LocalRankScene.cpp */,
+				84249C93178BF19600EAD1AC /* LocalRankScene.h */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -2299,6 +2320,8 @@
 				84A2589217785613001AD208 /* green_edit.png in Resources */,
 				0F6202D71779569D000E49BF /* hd in Resources */,
 				0F6202D81779569D000E49BF /* sd in Resources */,
+				84075FE8178D361600C319E2 /* winDefault.png in Resources */,
+				840B4512178EABED00C9A52E /* localRank.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2568,6 +2591,9 @@
 				84A2588F17783721001AD208 /* PlayerName.cpp in Sources */,
 				8406FAC9178169C8004B1DA2 /* RankingScene.cpp in Sources */,
 				DC71402417841CBF001B275B /* InputEmail.cpp in Sources */,
+				84249C94178BF19600EAD1AC /* LocalRankScene.cpp in Sources */,
+				84075FEE178D5E1B00C319E2 /* GLES-Render.cpp in Sources */,
+				840B4515178EAD7400C9A52E /* IOFile.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

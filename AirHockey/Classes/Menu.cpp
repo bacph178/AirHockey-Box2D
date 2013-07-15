@@ -52,6 +52,11 @@ bool Menu::init()
                                           this,
                                           menu_selector(Menu::menuBGM));
     bmgMenuItem->setPosition(ccp(size.width / 2.10989011, size.height / 2.63239075));
+    if (CCUserDefault::sharedUserDefault()->getBoolForKey("bmg")) {
+        bmgMenuItem->setColor(ccc3(255, 255, 255));
+    }else{
+        bmgMenuItem->setColor(ccc3(32, 32, 64));
+    }
 
     // create menu, it's an autorelease object
     CCMenu* pMenu = CCMenu::create(startMenuItem, rankMenuItem, bmgMenuItem, NULL);
@@ -64,19 +69,22 @@ bool Menu::init()
 
     // add the sprite as a child to this layer
     this->addChild(pSprite, 0);
+    CCLOG("điểm mặc định: %d",GameManager::sharedGameManager()->getPoint());
     
-    GameManager::sharedGameManager()->setBgm(true);
+   // GameManager::sharedGameManager()->setBgm(true);
     return true;
 }
 void Menu::menuBGM(CCObject* pSender)
 {
     GameManager *game = GameManager::sharedGameManager();
-    if (game->getBgm()) {
+    if (CCUserDefault::sharedUserDefault()->getBoolForKey("bmg")) {
         bmgMenuItem->setColor(ccc3(32, 32, 64));
         game->setBgm(false);
+        CCUserDefault::sharedUserDefault()->setBoolForKey("bmg", false);
     } else {
         bmgMenuItem->setColor(ccc3(255, 255, 255));
         game->setBgm(true);
+        CCUserDefault::sharedUserDefault()->setBoolForKey("bmg", true);
     }
 
 }
@@ -92,7 +100,7 @@ void Menu::menuStartgame(CCObject* pSender)
 {
     CCScene *playerNameScene = PlayerName::scene();
     CCScene *pScene = CCTransitionFadeTR::create(2, playerNameScene);
-    CCDirector::sharedDirector()->replaceScene(playerNameScene);
+    CCDirector::sharedDirector()->replaceScene(pScene);
 }
 
 

@@ -12,6 +12,7 @@
 #include "GamePlay.h"
 #include "PlayerName.h"
 #include "GameManager.h"
+#include "LocalRankScene.h"
 using namespace cocos2d;
 USING_NS_CC;
 USING_NS_CC_EXT;
@@ -33,12 +34,18 @@ CCScene* RankingScene::scene()
 bool RankingScene::init()
 {
     CCSize size = CCDirector::sharedDirector()->getWinSize();
-    CCLabelTTF *ranking = CCLabelTTF::create("RANKING", "Time new roman", 60);
-    ranking->setPosition(ccp(size.width / 2, 9 * size.height / 10));
+    CCLabelTTF *ranking = CCLabelTTF::create("RANKING", "Time new roman", 50);
+    ranking->setColor(ccc3(32, 200, 34));
+    ranking->setPosition(ccp(size.width * 2 / 7, 10 * size.height / 11));
     this->addChild(ranking);
+    CCLabelTTF *localRank = CCLabelTTF::create("LOCAL", "Time new roman", 50);
+    CCMenuItemLabel *localMenuItem = CCMenuItemLabel::create(localRank,
+                                                           this,
+                                                           menu_selector(RankingScene::local));
+    localMenuItem->setPosition(ccp(size.width * 3 / 4, 10 * size.height / 11));
 
     CCHttpRequest* request = new CCHttpRequest();
-    request->setUrl("http://192.168.1.44:3000/users.json");
+    request->setUrl("http://192.168.1.177:3000/users.json");
     request->setRequestType(CCHttpRequest::kHttpGet);
     request->setResponseCallback(this, callfuncND_selector(RankingScene::onHttpRequestCompleted));
     CCHttpClient::getInstance()->send(request);
@@ -50,8 +57,8 @@ bool RankingScene::init()
                                                              "btn_Continue.png",
                                                              this,
                                                              menu_selector(RankingScene::menuPlay));
-    startMenuItem->setScale(4);
-    startMenuItem->setPosition(ccp(size.width/4, size.height/8));
+    startMenuItem->setScale(3);
+    startMenuItem->setPosition(ccp(size.width / 3.5, size.height / 8));
     
     //create rankMenuItem
     CCMenuItemImage *rankMenuItem = CCMenuItemImage::create(
@@ -59,10 +66,13 @@ bool RankingScene::init()
                                                             "btn_menu.png",
                                                             this,
                                                             menu_selector(RankingScene::menuMenu));
-    rankMenuItem->setScale(4);
-    rankMenuItem->setPosition(ccp(size.width * 3/4, size.height/8));
-    CCMenu* pMenu = CCMenu::create(startMenuItem, rankMenuItem, NULL);
-    pMenu->setPosition(ccp(0,0));
+    rankMenuItem->setScale(3);
+    rankMenuItem->setPosition(ccp(size.width * 3 / 4, size.height / 8));
+    CCMenu* pMenu = CCMenu::create(startMenuItem,
+                                   rankMenuItem,
+                                   localMenuItem,
+                                   NULL);
+    pMenu->setPosition(ccp(0, 0));
     this->addChild(pMenu);
     
     return true;
@@ -146,11 +156,14 @@ void RankingScene::menuMenu(CCObject* pSender)
 }
 void RankingScene::menuPlay(CCObject* pSender)
 {
-    if (GameManager::sharedGameManager()->getName() != "") {
+    if (GameManager::sharedGameManager()->getPoint() != 0) {
         CCScene *GamePlayScene = GamePlay::scene();
-        CCScene *pScene = CCTransitionFadeTR::create(2, GamePlayScene);
-        CCDirector::sharedDirector()->replaceScene(pScene);
+        CCDirector::sharedDirector()->replaceScene(GamePlayScene);
     }else {
         CCDirector::sharedDirector()->replaceScene(PlayerName::scene());
     }
+}
+void RankingScene::local(CCObject *pSender)
+{
+    CCDirector::sharedDirector()->replaceScene(LocalRankScene::scene());
 }

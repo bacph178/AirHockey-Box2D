@@ -12,7 +12,9 @@
 #include "HttpClient.h"
 #include "rapidjson.h"
 #include "document.h"
+#include "RankingScene.h"
 #include "InputEmail.h"
+#include "IOFile.h"
 
 using namespace cocos2d;
 using namespace CocosDenshion;
@@ -125,7 +127,6 @@ GamePlay::GamePlay()
     this->addChild(_ball, 1, 10);
     b2BodyDef ballBodyDef;
     ballBodyDef.type = b2_dynamicBody;
-//    ballBodyDef.linearDamping = 1.0f;
     ballBodyDef.position.Set(s.width/2/PTM_RATIO,
                              s.height/2/PTM_RATIO);
     ballBodyDef.userData = _ball;
@@ -185,13 +186,14 @@ GamePlay::~GamePlay()
     _groundBody = NULL;
     delete _contactListener;
     
-    delete m_debugDraw;
+  //  delete m_debugDraw;
 }
 
 #pragma mark Create Ground
 
 void GamePlay::initPhysics()
 {
+    
     b2Vec2 gravity;
     gravity.Set(0.0f, 0.0f);
     world = new b2World(gravity);
@@ -202,8 +204,8 @@ void GamePlay::initPhysics()
 
     world->SetContinuousPhysics(true);
     
-    m_debugDraw = new GLESDebugDraw(PTM_RATIO);
-    world->SetDebugDraw(m_debugDraw);
+  //  m_debugDraw = new GLESDebugDraw(PTM_RATIO);
+  //  world->SetDebugDraw(m_debugDraw);
     
     uint32 flags = 0;
     flags += b2Draw::e_shapeBit;
@@ -211,7 +213,7 @@ void GamePlay::initPhysics()
     flags += b2Draw::e_aabbBit;
     flags += b2Draw::e_pairBit;
     flags += b2Draw::e_centerOfMassBit;
-    m_debugDraw->SetFlags(flags);
+ //   m_debugDraw->SetFlags(flags);
     
     b2BodyDef groundBodyDef;
     groundBodyDef.position.Set(0, 0);
@@ -268,7 +270,7 @@ void GamePlay::draw()
 
     kmGLPushMatrix();
 
-    world->DrawDebugData();
+  //  world->DrawDebugData();
 
     kmGLPopMatrix();
     
@@ -325,9 +327,8 @@ void GamePlay::update(float dt)
             this->gameReset();
         }
     }
-    
-
-    if ((minutes == 0 && seconds == 0) || _player1Score == 7 || _player2Score == 7) {
+    int index = CCUserDefault::sharedUserDefault()->getIntegerForKey("index");
+    if ((minutes == 0 && seconds == 0) || _player1Score == 1 || _player2Score == 1) {
         playing = false ;
         this->unscheduleAllSelectors() ;
         this->unscheduleUpdate() ;
@@ -340,34 +341,32 @@ void GamePlay::update(float dt)
             int p = (_player1Score + 1) * (180 - (minutes * 60 + seconds)) *
             (GameManager::sharedGameManager()->getLevel() * 2000);
             GameManager::sharedGameManager()->setPoint(p);
-            string name = GameManager::sharedGameManager()->getName();
+            string name = CCUserDefault::sharedUserDefault()->getStringForKey("playerName");
             char strP[20] = {0};
             sprintf(strP, "%i", p);
-            string url = "http://192.168.1.44:3000/users?name="+name+"&point="+strP+"&email=ngocduk54a2@gmail.com"+"&reward=0";
+            string url = "http://192.168.1.77:3000/users?name="+name+"&point="+strP+"&email=ngocduk54a2@gmail.com"+"&reward=0";
             request->setUrl(url.c_str());
             request->setRequestType(CCHttpRequest::kHttpPost);
             CCHttpClient::getInstance()->send(request);
             request->release();
+            
+            // ghi dữ liệu vào file
+            index = index + 1;
+            CCUserDefault::sharedUserDefault()->setIntegerForKey("index", index);
+            IOFile *io = new IOFile("localRank.plist");
+            char nameIndex[4] = {0};
+            sprintf(nameIndex, "%i",index);
+            string a = " ";
+            name = nameIndex + a + name;
+            Player *player = new Player(name,p);
+            io->write(player);
             
             this->checkHightScore();
         }
         else if(_player1Score <= _player2Score) {
             this->moveBgLose(1) ;
             lose = true;
-        }
-        //---------send request to server ------------
-        CCHttpRequest* request = new CCHttpRequest();
-        int p = (_player1Score + 1) * (180 - (minutes * 60 + seconds)) * (GameManager::sharedGameManager()->getLevel() * 2000);
-        GameManager::sharedGameManager()->setPoint(p);
-        string name = GameManager::sharedGameManager()->getName();
-        char strP[20] = {0};
-        sprintf(strP, "%i", p);
-        string url = "http://192.168.1.44:3000/users?name="+name+"&point="+strP+"&email=ngocduk54a2@gmail.com"+"&reward=0";
-        request->setUrl(url.c_str());
-        request->setRequestType(CCHttpRequest::kHttpPost);
-        CCHttpClient::getInstance()->send(request);
-        request->release();
-        
+        }        
     }
     std::vector<MyContact>::iterator pos;
     for(pos = _contactListener->_contacts.begin();
@@ -543,7 +542,7 @@ void GamePlay::playerScore(int player) {
 
 void GamePlay::checkHightScore() {
     CCHttpRequest* request = new CCHttpRequest();
-    request->setUrl("http://192.168.1.44:3000/users.json");
+    request->setUrl("http://192.168.1.77:3000/users.json");
     request->setRequestType(CCHttpRequest::kHttpGet);
     request->setResponseCallback(this, callfuncND_selector(GamePlay::onHttpRequestCompleted));
     CCHttpClient::getInstance()->send(request);
@@ -594,9 +593,9 @@ void GamePlay::onHttpRequestCompleted(CCNode *sender, void *data)
                 CCDirector::sharedDirector()->replaceScene(InputEmail::scene());
                 break;
             }
+
         }
-    }
-    else
+    }else
     {
         CCLog(document.GetParseError());
     }
@@ -668,7 +667,7 @@ void GamePlay::Timer(float dt) {
 
 void GamePlay::addBgWin() {
     CCSize s = CCDirector::sharedDirector()->getWinSize() ;
-    bgWin = CCSprite::create("Default.png");
+    bgWin = CCSprite::create("winDefault.png");
     bgWin->setPosition(ccp(s.width * 2 * (3.0f / 4) + 30, s.height / 2)) ;
     bgWin->setScaleY(1.1);
     bgWin->setScaleX(1.15);
@@ -690,13 +689,14 @@ void GamePlay::addBgWin() {
     
     replayWin = CCMenuItemImage::create("btn_Continue.png", "btn_Continue.png",
                                         this, menu_selector(GamePlay::menuReplay));
-    replayWin->setPosition(ccp(s.width * 5.0f / 4, s.height / 5)) ;
+    replayWin->setPosition(ccp(s.width * 5.0f / 4, s.height / -10)) ;
     replayWin->setScale(3);
     
     menuWin = CCMenuItemImage::create("btn_menu.png", "btn_menu.png", this,
                                       menu_selector(GamePlay::menuMenu));
-    menuWin->setPosition(ccp(s.width + s.width * 0.75, s.height / 5)) ;
-    menuWin->setScale(3);}
+    menuWin->setPosition(ccp(s.width + s.width * 0.75, s.height / -10)) ;
+    menuWin->setScale(3);
+}
 
 void GamePlay::addBgLose() {
     CCSize s = CCDirector::sharedDirector()->getWinSize() ;
@@ -742,23 +742,9 @@ void GamePlay::addBgPause() {
     menuItemImagePause->setScale(2);
 }
 void GamePlay::moveBgWin(int i) {
-    CCSize s = CCDirector::sharedDirector()->getWinSize() ;
+    CCSize s = CCDirector::sharedDirector()->getWinSize();
     if (i == 1) {
-        CCMoveTo * bgWinMove = CCMoveTo::create(1, ccp(s.width / 2, s.height/2)) ;
-        CCMoveTo * lbPointMove = CCMoveTo::create(1, ccp(s.width / 2, s.height - 200)) ;
-        CCMoveTo * menuMove = CCMoveTo::create(1, ccp(s.width * 3.0f / 4, s.height / 5)) ;
-        CCMoveTo * replayMove = CCMoveTo::create(1, ccp(s.width / 4, s.height / 5)) ;
-        
-        char str_point[20] = {0};
-        int p = (_player1Score + 1) * (180 - (minutes * 60 + seconds)) *
-           (GameManager::sharedGameManager()->getLevel() * 2000);
-        sprintf(str_point, "%i", p);
-        lb_point->setString(str_point);
-        
-        bgWin->runAction(bgWinMove);
-        menuWin->runAction(menuMove);
-        replayWin->runAction(replayMove);
-        lb_point->runAction(lbPointMove);
+        CCDirector::sharedDirector()->replaceScene(RankingScene::scene());
     }else {
         CCMoveTo * bgWinMove = CCMoveTo::create(1, ccp(s.width * 2 * (3.0f / 4),
                                                        s.height / 2)) ;

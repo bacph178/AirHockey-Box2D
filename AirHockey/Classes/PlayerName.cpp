@@ -42,9 +42,12 @@ bool PlayerName::init()
                                  visibleOrigin.y + visibleSize.height * 3 / 4));
     m_pEditName->setFontSize(40);
     m_pEditName->setFontColor(ccRED);
+    if (CCUserDefault::sharedUserDefault()->getStringForKey("playerName") == "") {
+        CCUserDefault::sharedUserDefault()->setStringForKey("playerName","playerName");
+    }
     string p = CCUserDefault::sharedUserDefault()->getStringForKey("playerName");
-    if (p == "") m_pEditName->setPlaceHolder("Player");
-    else m_pEditName->setPlaceHolder(p.c_str());
+    CCLOG("tên mặc định: %s",p.c_str());
+    m_pEditName->setPlaceHolder(p.c_str());
     m_pEditName->setPlaceholderFontColor(ccWHITE);
     m_pEditName->setMaxLength(15);
     m_pEditName->setReturnType(cocos2d::extension::kKeyboardReturnTypeDone);
@@ -70,60 +73,45 @@ bool PlayerName::init()
 }
 void PlayerName::editBoxEditingDidBegin(cocos2d::extension::CCEditBox* editBox)
 {
-    //CCLog("editBox %p DidBegin !", editBox);
+   // CCLog("editBox %p DidBegin ! %s", editBox, m_pEditName->getText());
 }
 
 void PlayerName::editBoxEditingDidEnd(cocos2d::extension::CCEditBox* editBox)
 {
-    //CCLog("editBox %p DidEnd !", editBox);
+    //CCLog("editBox %p DidEnd !", editBox, m_pEditName->getText());
 }
 
 void PlayerName::editBoxTextChanged(cocos2d::extension::CCEditBox* editBox,
                                     const std::string& text)
 {
-    //CCLog("editBox %p TextChanged, text: %s ", editBox, text.c_str());
+    //CCLog("editBox %p TextChanged, text: %s, edit nam ", editBox, text.c_str(), m_pEditName->getText());
 }
 
 void PlayerName::editBoxReturn(cocos2d::extension::CCEditBox* editBox)
 {
-    //CCLog("editBox %p was returned !");
-    GameManager::sharedGameManager()->setName(m_pEditName->getText());
+    CCUserDefault::sharedUserDefault()->setStringForKey("playerName",
+                                                     m_pEditName->getText());
 }
 void PlayerName::menuHard(CCObject *pSender)
 {
-//    if (strcmp(m_pEditName->getText(), "") != 0) {
-    CCUserDefault::sharedUserDefault()->setStringForKey("playerName",
-                                                        m_pEditName->getText());
-    CCLOG("%s", m_pEditName->getText());
     CCUserDefault::sharedUserDefault()->flush();
-        GameManager::sharedGameManager()->setLevel(3);
-        CCScene *gamePlayScene = GamePlay::scene();
-        CCDirector::sharedDirector()->replaceScene(gamePlayScene);
-//    }
+    GameManager::sharedGameManager()->setLevel(3);
+    CCScene *gamePlayScene = GamePlay::scene();
+    CCDirector::sharedDirector()->replaceScene(gamePlayScene);
 }
 void PlayerName::menuMedium(CCObject *pSender)
 {
-//    if (strcmp(m_pEditName->getText(), "") != 0) {
-    CCUserDefault::sharedUserDefault()->setStringForKey("playerName",
-                                                        m_pEditName->getText());
-    CCLOG("%s", m_pEditName->getText());
     CCUserDefault::sharedUserDefault()->flush();
-        GameManager::sharedGameManager()->setLevel(2);
-        CCScene *gamePlayScene = GamePlay::scene();
-        CCDirector::sharedDirector()->replaceScene(gamePlayScene);
-//    }
+    GameManager::sharedGameManager()->setLevel(2);
+    CCScene *gamePlayScene = GamePlay::scene();
+    CCDirector::sharedDirector()->replaceScene(gamePlayScene);
 }
     
 void PlayerName::menuEasy(CCObject *pSender)
 {
-//    if (strcmp(m_pEditName->getText(), "") != 0) {
-    CCUserDefault::sharedUserDefault()->setStringForKey("playerName",
-                                                        m_pEditName->getText());
-    CCLOG("%s", m_pEditName->getText());
     CCUserDefault::sharedUserDefault()->flush();
-        GameManager::sharedGameManager()->setLevel(1);
-        CCScene *gamePlayScene = GamePlay::scene();
-        CCDirector::sharedDirector()->replaceScene(gamePlayScene);
-//    }
+    GameManager::sharedGameManager()->setLevel(1);
+    CCScene *gamePlayScene = GamePlay::scene();
+    CCDirector::sharedDirector()->replaceScene(gamePlayScene);
 }
 
